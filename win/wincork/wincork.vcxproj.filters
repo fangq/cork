@@ -105,7 +105,22 @@
     <ClInclude Include="..\..\src\isct\quantization.h">
       <Filter>Header Files\isct</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\isct\triangle.h">
+    <ClInclude Include="..\..\src\isct\cdt\CDT.h">
+      <Filter>Header Files\isct</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\isct\cdt\CDTUtils.h">
+      <Filter>Header Files\isct</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\isct\cdt\KDTree.h">
+      <Filter>Header Files\isct</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\isct\cdt\LocatorKDTree.h">
+      <Filter>Header Files\isct</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\isct\cdt\predicates.h">
+      <Filter>Header Files\isct</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\isct\cdt\Triangulation.h">
       <Filter>Header Files\isct</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\isct\unsafeRayTriIsct.h">
@@ -155,9 +170,6 @@
       <Filter>Source Files\isct</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\isct\quantization.cpp">
-      <Filter>Source Files\isct</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\isct\triangle.c">
       <Filter>Source Files\isct</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cork.cpp">

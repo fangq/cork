@@ -63,4 +63,16 @@ Cork is licensed under the LGPL with an exception (from QT) to more easily allow
 
 Of course, none of the above supercedes the actual COPYRIGHT.
 
+Third-Party Code
+================
+
+Cork bundles the [CDT](https://github.com/artem-ogre/CDT) constrained
+Delaunay triangulation library (`src/isct/cdt`), Copyright Artem
+Amirkhanov, licensed under the Mozilla Public License 2.0 (see
+`src/isct/cdt/LICENSE_CDT_MPL2.txt`).  CDT's bundled robust geometric
+predicates (`src/isct/cdt/predicates.h`) are Copyright William C.
+Lenthe, licensed under the BSD 3-Clause license.  CDT replaces the
+Triangle library used by earlier versions of Cork, whose license did
+not permit free redistribution.
+
 

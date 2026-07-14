@@ -118,8 +118,7 @@ UTIL_HEADERS      := prelude.h memPool.h iterPool.h shortVec.h \
 ISCT_HEADERS      := unsafeRayTriIsct.h \
                      ext4.h fixext4.h gmpext4.h absext4.h \
                      quantization.h fixint.h \
-                     empty3d.h \
-                     triangle.h
+                     empty3d.h
 RAWMESH_HEADERS   := rawMesh.h rawMesh.tpp
 MESH_HEADERS      := mesh.h mesh.decl.h \
                      mesh.tpp mesh.topoCache.tpp \
@@ -156,15 +155,11 @@ DEPENDS := $(addprefix depend/,$(addsuffix .d,$(ALL_SRCS)))
 # | Object Aggregation for Targets |
 # +--------------------------------+
 
-OBJ               := $(addprefix obj/,$(addsuffix .o,$(SRCS))) \
-                     obj/isct/triangle.o
-DEBUG             := $(addprefix debug/,$(addsuffix .o,$(SRCS))) \
-                     obj/isct/triangle.o
+OBJ               := $(addprefix obj/,$(addsuffix .o,$(SRCS)))
+DEBUG             := $(addprefix debug/,$(addsuffix .o,$(SRCS)))
 
-MAIN_OBJ          := $(addprefix obj/,$(addsuffix .o,$(MAIN_SRC))) \
-                     obj/isct/triangle.o
-MAIN_DEBUG        := $(addprefix debug/,$(addsuffix .o,$(MAIN_SRC))) \
-                     obj/isct/triangle.o
+MAIN_OBJ          := $(addprefix obj/,$(addsuffix .o,$(MAIN_SRC)))
+MAIN_DEBUG        := $(addprefix debug/,$(addsuffix .o,$(MAIN_SRC)))
 
 LIB_TARGET_NAME   := cork
 
@@ -187,23 +182,11 @@ lib/lib$(LIB_TARGET_NAME)debug.a: $(DEBUG)
 
 bin/cork: $(MAIN_OBJ)
 	@echo "Linking cork command line tool"
-	@$(CXX) -o bin/cork $(MAIN_OBJ) $(LINK)
+	$(CXX) -o bin/cork $(MAIN_OBJ) $(LINK)
 
 bin/off2obj: obj/off2obj.o
 	@echo "Linking off2obj"
 	@$(CXX) -o bin/off2obj obj/off2obj.o $(LINK)
-
-# +------------------------------+
-# | Specialized File Build Rules |
-# +------------------------------+
-
-obj/isct/triangle.o: src/isct/triangle.c
-	@echo "Compiling the Triangle library"
-	@$(CC) -O2 -DNO_TIMER \
-               -DREDUCED \
-               -DCDT_ONLY -DTRILIBRARY \
-               -Wall -DANSI_DECLARATORS \
-               -o obj/isct/triangle.o -c src/isct/triangle.c
 
 # +------------------------------------+
 # | Generic Source->Object Build Rules |

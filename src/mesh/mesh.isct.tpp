@@ -33,10 +33,9 @@
 
 #include "aabvh.h"
 
-#define REAL double
-extern "C" {
-#include "triangle.h"
-}
+#include <vector>
+
+#include "cdt/CDT.h"
 
 struct GenericVertType;
     struct IsctVertType;
@@ -423,57 +422,34 @@ public:
         uint dim1 = (normdim+2)%3;
         double sign_flip = (normal.v[normdim] < 0.0)? -1.0 : 1.0;
         
-        struct triangulateio in, out;
-        
-        /* Define input points. */
-        in.numberofpoints           = points.size();
-        in.numberofpointattributes  = 0;
-        in.pointlist                = new REAL[in.numberofpoints * 2];
-        in.pointattributelist       = nullptr;
-        in.pointmarkerlist          = new int[in.numberofpoints];
-        for(int k=0; k<in.numberofpoints; k++) {
-            in.pointlist[k*2 + 0] = points[k]->coord.v[dim0];
-            in.pointlist[k*2 + 1] = points[k]->coord.v[dim1] * sign_flip;
-            in.pointmarkerlist[k] = (points[k]->boundary)? 1 : 0;
+        // solve the constrained Delaunay triangulation problem
+        // in the 2d projection plane; the domain is a single convex
+        // triangle, so no exterior/hole cleanup is needed beyond
+        // removing the super-triangle
+        std::vector< CDT::V2d<double> >     cdtpts(points.size());
+        std::vector< CDT::Edge >            cdtedges;
+
+        for(uint k=0; k<points.size(); k++) {
+            cdtpts[k].x = points[k]->coord.v[dim0];
+            cdtpts[k].y = points[k]->coord.v[dim1] * sign_flip;
         }
-        
-        /* Define the input segments */
-        in.numberofsegments = edges.size();
-        in.numberofholes = 0;// yes, zero
-        in.numberofregions = 0;// not using regions
-        in.segmentlist = new int[in.numberofsegments * 2];
-        in.segmentmarkerlist = new int[in.numberofsegments];
-        for(int k=0; k<in.numberofsegments; k++) {
-            in.segmentlist[k*2 + 0] = edges[k]->ends[0]->idx;
-            in.segmentlist[k*2 + 1] = edges[k]->ends[1]->idx;
-            in.segmentmarkerlist[k] = (edges[k]->boundary)? 1 : 0;
-        }
-        
-        // to be safe... declare 0 triangle attributes on input
-        in.numberoftriangles = 0;
-        in.numberoftriangleattributes = 0;
-        
-        /* set for flags.... */
-        out.pointlist = nullptr;
-        out.pointattributelist = nullptr; // not necessary if using -N or 0 attr
-        out.pointmarkerlist = nullptr;
-        out.trianglelist = nullptr; // not necessary if using -E
-        //out.triangleattributelist = null; // not necessary if using -E or 0 attr
-        //out.trianglearealist = // only needed with -r and -a
-        //out.neighborlist = null; // only neccesary if -n is used
-        out.segmentlist = nullptr; // NEED THIS; output segments go here
-        out.segmentmarkerlist = nullptr; // NEED THIS for OUTPUT SEGMENTS
-        //out.edgelist = null; // only necessary if -e is used
-        //out.edgemarkerlist = null; // only necessary if -e is used
-                
-        // solve the triangulation problem
-        char *params = (char*)("pzQYY");
-        //char *debug_params = (char*)("pzYYVC");
-        triangulate(params, &in, &out, nullptr);
-        
-        if(out.numberofpoints != in.numberofpoints) {
-            std::cout << "out.numberofpoints: "
-                      << out.numberofpoints << std::endl;
+        cdtedges.reserve(edges.size());
+        for(uint k=0; k<edges.size(); k++)
+            cdtedges.push_back(CDT::Edge(edges[k]->ends[0]->idx,
+                                         edges[k]->ends[1]->idx));
+
+        CDT::Triangulation<double> cdt;
+        cdt.insertVertices(cdtpts);
+        cdt.insertEdges(cdtedges);
+        // discard triangles outside of the closed boundary-edge loop;
+        // quantized intersection points may fall slightly outside the
+        // original triangle, and the resulting sliver triangles beyond
+        // the boundary must not be kept (matches Triangle's -p behavior)
+        cdt.eraseOuterTriangles();
+
+        if(cdt.vertices.size() != points.size()) {
+            std::cout << "cdt.vertices.size(): "
+                      << cdt.vertices.size() << std::endl;
             std::cout << "points.size(): " << points.size() << std::endl;
             std::cout << "dumping out the points' coordinates" << std::endl;
             for(uint k=0; k<points.size(); k++) {
@@ -481,59 +457,32 @@ public:
                 std::cout << "  " << gv->coord
                           << "  " << gv->idx << std::endl;
             }
-            
+
             std::cout << "dumping out the segments" << std::endl;
-            for(int k=0; k<in.numberofsegments; k++)
-                std::cout << "  " << in.segmentlist[k*2 + 0]
-                          << "; " << in.segmentlist[k*2 + 1]
-                          << " (" << in.segmentmarkerlist[k]
+            for(uint k=0; k<edges.size(); k++)
+                std::cout << "  " << edges[k]->ends[0]->idx
+                          << "; " << edges[k]->ends[1]->idx
+                          << " (" << (edges[k]->boundary? 1 : 0)
                           << ") " << std::endl;
-            
+
             std::cout << "dumping out the solved for triangles now..."
                       << std::endl;
-            for(int k=0; k<out.numberoftriangles; k++) {
+            for(uint k=0; k<cdt.triangles.size(); k++) {
                 std::cout << "  "
-                          << out.trianglelist[(k*3)+0] << "; "
-                          << out.trianglelist[(k*3)+1] << "; "
-                          << out.trianglelist[(k*3)+2] << std::endl;
+                          << cdt.triangles[k].vertices[0] << "; "
+                          << cdt.triangles[k].vertices[1] << "; "
+                          << cdt.triangles[k].vertices[2] << std::endl;
             }
         }
-        ENSURE(out.numberofpoints == in.numberofpoints);
-        
-        //std::cout << "number of points in: " << in.numberofpoints
-        //          << std::endl;
-        //std::cout << "number of edges in: " << in.numberofsegments
-        //          << std::endl;
-        //std::cout << "number of triangles out: " << out.numberoftriangles
-        //          << std::endl;
-        
-        gtris.resize(out.numberoftriangles);
-        for(int k=0; k<out.numberoftriangles; k++) {
-            GVptr       gv0         = points[out.trianglelist[(k*3)+0]];
-            GVptr       gv1         = points[out.trianglelist[(k*3)+1]];
-            GVptr       gv2         = points[out.trianglelist[(k*3)+2]];
+        ENSURE(cdt.vertices.size() == points.size());
+
+        gtris.resize(cdt.triangles.size());
+        for(uint k=0; k<cdt.triangles.size(); k++) {
+            GVptr       gv0         = points[cdt.triangles[k].vertices[0]];
+            GVptr       gv1         = points[cdt.triangles[k].vertices[1]];
+            GVptr       gv2         = points[cdt.triangles[k].vertices[2]];
                         gtris[k]    = iprob->newGenericTri(gv0, gv1, gv2);
         }
-        
-        
-        // clean up after triangulate...
-            // in free
-        free(in.pointlist);
-        free(in.pointmarkerlist);
-        free(in.segmentlist);
-        free(in.segmentmarkerlist);
-            // out free
-        free(out.pointlist);
-        //free(out.pointattributelist);
-        free(out.pointmarkerlist);
-        free(out.trianglelist);
-        //free(out.triangleattributelist);
-        //free(out.trianglearealist);
-        //free(out.neighborlist);
-        free(out.segmentlist);
-        free(out.segmentmarkerlist);
-        //free(out.edgelist);
-        //free(out.edgemarkerlist);
     }
 
 private:

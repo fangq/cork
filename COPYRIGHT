@@ -6,7 +6,12 @@ Please contact the author at
 	gilbert@gilbertbernstein.com
 if you would like to discuss licensing under other terms.
 
-Triangle (used by Franky) is Copyright Jonathan Shewchuk according to the terms spelled out in the comments of triangle.c
+The CDT constrained Delaunay triangulation library (src/isct/cdt) is
+Copyright Artem Amirkhanov and is licensed under the Mozilla Public
+License 2.0, see src/isct/cdt/LICENSE_CDT_MPL2.txt. Its bundled robust
+geometric predicates (src/isct/cdt/predicates.h) are Copyright
+William C. Lenthe under the BSD 3-Clause license, see the comments of
+that file.
 
 
                    GNU LESSER GENERAL PUBLIC LICENSE
