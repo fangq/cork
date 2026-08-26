@@ -266,8 +266,10 @@ private:    // caches
         uint                vid;
         ShortVec<uint, 2>   tids;
         Edata               data;
-        inline EGraphEntry() {}
-        inline EGraphEntry(uint vid_) : vid(vid_) {}
+        // value-initialize data; it is filled in by the users of the cache,
+        // but leaving it indeterminate here trips -Wmaybe-uninitialized
+        inline EGraphEntry() : vid(0), data() {}
+        inline EGraphEntry(uint vid_) : vid(vid_), data() {}
     };
     template<class Edata>
     struct EGraphCache {
